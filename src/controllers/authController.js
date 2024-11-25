@@ -1,9 +1,16 @@
 import User from "../models/userSchema.js";
-import jwt from 'jsonwebtoken';
 import { generateToken } from "../utils/generateToken.js";
+import { userJoiSchema } from "../validation/joiUser.js";
 
 export const Register = async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { value, error } = userJoiSchema.validate(req.body)
+    const { name, email, password, role } = value;
+    if (error) {
+        return res.status(400).json({
+            status: 'Error',
+            message: error.details[0].message
+        });
+    }
     try {
         const userExists = await User.findOne({ email });
         if (userExists) {
@@ -24,7 +31,14 @@ export const Register = async (req, res) => {
 
 
 export const userLogin = async (req, res) => {
-    const { email, password } = req.body;
+    const { value, error } = userJoiSchema.validate(req.body)
+    const { email, password } = value;
+    if (error) {
+        return res.status(400).json({
+            status: 'Error',
+            message: error.details[0].message
+        });
+    }
     try {
         const user = await User.findOne({ email });
         if (user && (await user.matchPassword(password))) {
@@ -49,7 +63,7 @@ export const userLogin = async (req, res) => {
 
 export const adminPage = async (req, res) => {
     try {
-        
+
         if (req.user && req.user.role === 'Admin') {
             res.status(200).json({
                 success: true,
@@ -72,7 +86,7 @@ export const adminPage = async (req, res) => {
 };
 
 
-export const userPage = async (req, res) => {    
+export const userPage = async (req, res) => {
     try {
         if (req.user && req.user.role === 'User') {
             res.status(200).json({
